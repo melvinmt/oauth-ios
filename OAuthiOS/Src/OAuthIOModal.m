@@ -335,45 +335,9 @@ NSString *_host;
              }] resume];
 }
 
-- (void)showWithProvider:(NSString *)provider options:(NSDictionary*)options
+- (providerCompletion)showWithProvider:(NSString *)provider options:(NSDictionary*)options
 {
     _options = options;
-    if (_options != nil && [[_options objectForKey:@"cache"] isEqualToString:@"true"])
-    {
-        // Try to retrieve objects from cache
-        // Needs to be improved to handle expires_in
-        NSFileManager *fileManager = [NSFileManager defaultManager];
-        NSString *cachePath = [NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES) objectAtIndex:0];
-        NSString *file_url = [cachePath stringByAppendingPathComponent:[NSString stringWithFormat:@"oauthio-%@.json", provider]];
-        if([fileManager fileExistsAtPath:file_url])
-        {
-            NSString *json = [NSString stringWithContentsOfFile:file_url encoding:NSUTF8StringEncoding error:NULL];
-            NSDictionary *json_d = [NSJSONSerialization JSONObjectWithData:[json dataUsingEncoding:NSUTF8StringEncoding] options: NSJSONReadingMutableContainers error:nil];
-            NSNumber *expires = [[json_d objectForKey:@"data"] objectForKey:@"expires"];
-            NSTimeInterval interval = [expires doubleValue];
-            NSDate *expiring_date = [[NSDate alloc] initWithTimeIntervalSince1970:interval];
-            NSDate *now = [[NSDate alloc] init];
-            if ([now compare:expiring_date] == NSOrderedAscending)
-            {
-                @try {
-                    OAuthIORequest *request = [self buildRequestObject:json];
-                    if ([self.delegate respondsToSelector:@selector(didReceiveOAuthIOResponse:)])
-                        [self.delegate didReceiveOAuthIOResponse:request];
-                }
-                @catch (NSException *e) {
-                    NSMutableDictionary *errorDetail = [NSMutableDictionary dictionary];
-                    [errorDetail setValue:@"Could not read cache" forKey:NSLocalizedDescriptionKey];
-                    NSError *error = [[NSError alloc] initWithDomain:@"OAuthIO" code:100 userInfo:errorDetail];
-                    
-                    if ([self.delegate respondsToSelector:@selector(didFailWithOAuthIOError:)])
-                        [self.delegate didFailWithOAuthIOError:error];
-                }
-                
-                return;
-
-            }
-        }
-    }
 
     NSURLRequest *url = [_oauth getOAuthRequest:provider andUrl:_callback_url andOptions:options];
     if ([[_options objectForKey:@"clear-popup-cache"]  isEqual: @"true"]) {
@@ -386,9 +350,9 @@ NSString *_host;
         }
         [[NSUserDefaults standardUserDefaults] synchronize];
     }
-    [_rootViewController presentViewController:self animated:YES completion:^{
+    return ^{
         [_browser loadRequest:url];
-    }];
+    };
 }
 
 - (BOOL) clearCache

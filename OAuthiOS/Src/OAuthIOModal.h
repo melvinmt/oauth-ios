@@ -49,6 +49,8 @@
     
 
 }
+typedef void (^providerCompletion)();
+
 @property NSMutableArray *saved_cookies;
 @property (weak) id<OAuthIODelegate>   delegate;
 @property NSURLSession *session;
@@ -57,7 +59,7 @@
 - (id)initWithKey:(NSString *)key delegate:(id)delegate;
 - (id)initWithKey:(NSString *)key delegate:(id)delegate andOptions:(NSDictionary *) options;
 - (void)showWithProvider:(NSString *)provider;
-- (void)showWithProvider:(NSString *)provider options:(NSDictionary*)options;
+- (providerCompletion)showWithProvider:(NSString *)provider options:(NSDictionary*)options;
 - (void)showWithProvider:(NSString *)provider options:(NSDictionary*)options stateTokenUrl:(NSString*) stateUrl authUrl:(NSString*) authUrl;
 - (BOOL) clearCache;
 - (BOOL) clearCacheForProvider:(NSString *)provider;
